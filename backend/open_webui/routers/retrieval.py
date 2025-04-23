@@ -605,7 +605,7 @@ async def update_rag_config(
         )
 
         request.app.state.config.ENABLE_RAG_WEB_SEARCH = form_data.web.search.enabled
-        request.app.state.config.RAG_WEB_SEARCH_ENGINE = form_data.web.search.engine
+        request.app.state.config.RAG_WEB_SEARCH_ENGINE = form_data.web.search.engine.lower()
 
         request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = (
             form_data.web.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL
@@ -663,7 +663,7 @@ async def update_rag_config(
             form_data.web.search.perplexity_api_key
         )
 
-        request.app.state.config.DAUM_API_KEY = form_data.web.search.daum_api_key
+        # request.app.state.config.DAUM_API_KEY = form_data.web.search.daum_api_key
 
         request.app.state.config.RAG_WEB_SEARCH_RESULT_COUNT = (
             form_data.web.search.result_count
