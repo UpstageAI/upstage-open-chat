@@ -69,6 +69,7 @@ from open_webui.retrieval.utils import (
     query_collection_with_hybrid_search,
     query_doc,
     query_doc_with_hybrid_search,
+    generate_upstage_document_parsing,
 )
 from open_webui.utils.misc import (
     calculate_sha256_string,
@@ -1049,18 +1050,23 @@ def process_file(
             file_path = file.path
             if file_path:
                 file_path = Storage.get_file(file_path)
-                loader = Loader(
-                    engine=request.app.state.config.CONTENT_EXTRACTION_ENGINE,
-                    TIKA_SERVER_URL=request.app.state.config.TIKA_SERVER_URL,
-                    DOCLING_SERVER_URL=request.app.state.config.DOCLING_SERVER_URL,
-                    PDF_EXTRACT_IMAGES=request.app.state.config.PDF_EXTRACT_IMAGES,
-                    DOCUMENT_INTELLIGENCE_ENDPOINT=request.app.state.config.DOCUMENT_INTELLIGENCE_ENDPOINT,
-                    DOCUMENT_INTELLIGENCE_KEY=request.app.state.config.DOCUMENT_INTELLIGENCE_KEY,
-                    MISTRAL_OCR_API_KEY=request.app.state.config.MISTRAL_OCR_API_KEY,
+                docs = generate_upstage_document_parsing(
+                    model="document-parse",
+                    file_path=file_path,
+                    key=request.app.state.config.RAG_UPSTAGE_API_KEY
                 )
-                docs = loader.load(
-                    file.filename, file.meta.get("content_type"), file_path
-                )
+                # loader = Loader(
+                #     engine=request.app.state.config.CONTENT_EXTRACTION_ENGINE,
+                #     TIKA_SERVER_URL=request.app.state.config.TIKA_SERVER_URL,
+                #     DOCLING_SERVER_URL=request.app.state.config.DOCLING_SERVER_URL,
+                #     PDF_EXTRACT_IMAGES=request.app.state.config.PDF_EXTRACT_IMAGES,
+                #     DOCUMENT_INTELLIGENCE_ENDPOINT=request.app.state.config.DOCUMENT_INTELLIGENCE_ENDPOINT,
+                #     DOCUMENT_INTELLIGENCE_KEY=request.app.state.config.DOCUMENT_INTELLIGENCE_KEY,
+                #     MISTRAL_OCR_API_KEY=request.app.state.config.MISTRAL_OCR_API_KEY,
+                # )
+                # docs = loader.load(
+                #     file.filename, file.meta.get("content_type"), file_path
+                # )
 
                 docs = [
                     Document(

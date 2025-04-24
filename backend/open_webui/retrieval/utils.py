@@ -794,6 +794,75 @@ def generate_embeddings(
         return embeddings[0] if isinstance(text, str) else embeddings
 
 
+
+def generate_upstage_document_parsing(
+    model: str,
+    file_path: str,
+    url: str = "https://api.upstage.ai/v1",
+    key: str = "",
+    ocr: str = "auto",
+    chart_recognition: bool = True,
+    coordinates: bool = True,
+    output_formats: list[str] = ["html"],
+    base64_encoding: list[str] = ["figure"],
+    prefix: str = None,
+    user: UserModel = None,
+) -> Optional[list[list[float]]]:
+    import json
+    try:
+        # json_data = {"input": texts, "model": model}
+        files = {"document": open(file_path, "rb")}
+        print(files)
+        data = {
+            "model": model,
+            "ocr": ocr,
+            "chart_recognition": chart_recognition,
+            "coordinates": coordinates,
+            "output_formats": json.dumps(output_formats),
+            "base64_encoding": json.dumps(base64_encoding),
+        }
+        print(data)
+        # if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
+        #     json_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
+
+        r = requests.post(
+            f"{url}/document-digitization",
+            headers={
+                # "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+                # **(
+                #     {
+                #         "X-OpenWebUI-User-Name": user.name,
+                #         "X-OpenWebUI-User-Id": user.id,
+                #         "X-OpenWebUI-User-Email": user.email,
+                #         "X-OpenWebUI-User-Role": user.role,
+                #     }
+                #     if ENABLE_FORWARD_USER_INFO_HEADERS and user
+                #     else {}
+                # ),
+            },
+            files=files,
+            data=data,
+        )
+        r.raise_for_status()
+        data = r.json()
+        print(data)
+        if "content" in data and "html" in data["content"]:
+            return [
+                Document(
+                    page_content=data["content"]["html"], metadata={}
+                )
+                # for doc in docs
+            ]
+            return [data["content"]["html"]]
+        else:
+            raise "Something went wrong :/"
+    except Exception as e:
+        log.exception(f"Error generating upstage document parsing: {e}")
+        return None
+
+
+
 import operator
 from typing import Optional, Sequence
 
