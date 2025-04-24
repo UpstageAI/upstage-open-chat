@@ -837,7 +837,6 @@
 									/>
 								{/if}
 								
-								// 웹서치 에러인 경우 출력안함, 524에러인 경우 에러아닌것처럼 처리
 								{#if message?.error && status?.action !== 'web_search'}
 									{#if message?.error?.content.toString().includes('524error')}
 										<div class="status-description flex items-center gap-2 py-0.5">
