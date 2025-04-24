@@ -85,6 +85,7 @@ def upload_file(
     file_metadata: dict = {},
     process: bool = Query(True),
 ):
+    from open_webui.retrieval.utils import generate_upstage_document_parsing_async
     log.info(f"file.content_type: {file.content_type}")
     try:
         unsanitized_filename = file.filename
@@ -96,25 +97,54 @@ def upload_file(
         filename = f"{id}_{filename}"
         contents, file_path = Storage.upload_file(file.file, filename)
 
-        file_item = Files.insert_new_file(
-            user.id,
-            FileForm(
-                **{
-                    "id": id,
-                    "filename": name,
-                    "path": file_path,
-                    "meta": {
-                        "name": name,
-                        "content_type": file.content_type,
-                        "size": len(contents),
-                        "data": file_metadata,
-                    },
-                }
-            ),
-        )
+        # file_item = Files.insert_new_file(
+        #     user.id,
+        #     FileForm(
+        #         **{
+        #             "id": id,
+        #             "filename": name,
+        #             "path": file_path,
+        #             "meta": {
+        #                 "name": name,
+        #                 "content_type": file.content_type,
+        #                 "size": len(contents),
+        #                 "data": file_metadata,
+        #             },
+        #         }
+        #     ),
+        # )
+
+        request_id = None
+
+        # Save file metadata
+        meta_data = {
+            "name": name,
+            "content_type": file.content_type,
+            "size": len(contents),
+            "data": file_metadata,
+        }
+
         if process:
             try:
+                # 🎯 Async document parse (Upstage API) for supported formats
                 if file.content_type in [
+                    "image/jpeg", "image/png", "image/bmp", "application/pdf",
+                    "image/tiff", "image/heic",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # .pptx
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+                    "application/x-hwp",  # .hwp
+                    "application/vnd.hancom.hwp",  # alternative hwp
+                    "application/vnd.hancom.hwpx",  # .hwpx
+                ]:
+                    file_path_on_disk = Storage.get_file(file_path)
+                    request_id = generate_upstage_document_parsing_async(
+                        model="document-parse",
+                        file_path=file_path_on_disk,
+                        key=request.app.state.config.RAG_UPSTAGE_API_KEY
+                    )
+                    meta_data["request_id"] = request_id
+                elif file.content_type in [
                     "audio/mpeg",
                     "audio/wav",
                     "audio/ogg",
@@ -131,17 +161,34 @@ def upload_file(
                 elif file.content_type not in ["image/png", "image/jpeg", "image/gif"]:
                     process_file(request, ProcessFileForm(file_id=id), user=user)
 
-                file_item = Files.get_file_by_id(id=id)
+                # file_item = Files.get_file_by_id(id=id)
+            # except Exception as e:
+            #     log.exception(e)
+            #     log.error(f"Error processing file: {file_item.id}")
+            #     file_item = FileModelResponse(
+            #         **{
+            #             **file_item.model_dump(),
+            #             "error": str(e.detail) if hasattr(e, "detail") else str(e),
+            #         }
+            #     )
             except Exception as e:
                 log.exception(e)
-                log.error(f"Error processing file: {file_item.id}")
-                file_item = FileModelResponse(
-                    **{
-                        **file_item.model_dump(),
-                        "error": str(e.detail) if hasattr(e, "detail") else str(e),
-                    }
-                )
+                log.error(f"Error processing file: {id}")
+                meta_data["error"] = str(e.detail) if hasattr(e, "detail") else str(e)
 
+        # Insert or update after processing/ID generation
+        file_item = Files.insert_new_file(
+            user.id,
+            FileForm(
+                **{
+                    "id": id,
+                    "filename": name,
+                    "path": file_path,
+                    "meta": meta_data,
+                }
+            ),
+        )
+    
         if file_item:
             return file_item
         else:

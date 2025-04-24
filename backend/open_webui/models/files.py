@@ -61,6 +61,7 @@ class FileMeta(BaseModel):
     name: Optional[str] = None
     content_type: Optional[str] = None
     size: Optional[int] = None
+    request_id: Optional[str] = None
 
     model_config = ConfigDict(extra="allow")
 
