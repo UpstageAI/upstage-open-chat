@@ -16,6 +16,7 @@
 	let webSearchEngines = [
 		'Naver',
 		'Daum',
+		'Tavily'
 	];
 
 	let youtubeLanguage = 'en';
