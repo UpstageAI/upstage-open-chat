@@ -839,7 +839,7 @@
 								
 								{#if message?.error && status?.action !== 'web_search'}
 									{#if message?.error?.content.toString().includes('524error')}
-										<div class="status-description flex items-center gap-2 py-0.5">
+										<!-- <div class="status-description flex items-center gap-2 py-0.5">
 											<div class="">
 												<Spinner className="size-4" />
 											</div>
@@ -851,7 +851,7 @@
 												</div>
 											</div>
 										</div>
-										<Skeleton />
+										<Skeleton /> -->
 									{:else}
 										<Error content={message?.error?.content ?? message.content} />
 									{/if}
