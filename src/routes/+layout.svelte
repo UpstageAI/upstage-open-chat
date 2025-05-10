@@ -98,7 +98,7 @@
 		});
 
 		_socket.on('usage', (data) => {
-			console.log('usage', data);
+			//console.log('usage', data);
 			USAGE_POOL.set(data['models']);
 		});
 	};
@@ -262,7 +262,7 @@
 						if ($settings?.notificationEnabled ?? false) {
 							new Notification(`${title} | Open WebUI`, {
 								body: content,
-								icon: `${WEBUI_BASE_URL}/static/favicon.png`
+								icon: `${WEBUI_BASE_URL}/static/favicon.svg`
 							});
 						}
 					}
@@ -411,7 +411,7 @@
 					if ($settings?.notificationEnabled ?? false) {
 						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | Open WebUI`, {
 							body: data?.content,
-							icon: data?.user?.profile_image_url ?? `${WEBUI_BASE_URL}/static/favicon.png`
+							icon: data?.user?.profile_image_url ?? `${WEBUI_BASE_URL}/static/favicon.svg`
 						});
 					}
 				}
@@ -606,7 +606,7 @@
 
 <svelte:head>
 	<title>{$WEBUI_NAME}</title>
-	<link crossorigin="anonymous" rel="icon" href="{WEBUI_BASE_URL}/static/favicon.png" />
+	<link crossorigin="anonymous" rel="icon" href="{WEBUI_BASE_URL}/static/favicon.svg" />
 
 	<!-- rosepine themes have been disabled as it's not up to date with our latest version. -->
 	<!-- feel free to make a PR to fix if anyone wants to see it return -->

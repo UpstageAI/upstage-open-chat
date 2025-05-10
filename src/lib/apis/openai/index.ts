@@ -374,7 +374,13 @@ export const generateOpenAIChatCompletion = async (
 		body: JSON.stringify(body)
 	})
 		.then(async (res) => {
-			if (!res.ok) throw await res.json();
+			if (!res.ok) {
+				// 524 에러 처리를 위한 예외처리
+				if (res.status === 524) {
+					throw new Error("524error");
+				}
+				throw await res.json();
+			}
 			return res.json();
 		})
 		.catch((err) => {

@@ -2,10 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/png" href="/static/favicon.png" />
+		<link rel="icon" type="image/png" href="/static/favicon.svg" />
 		<link rel="icon" type="image/png" href="/static/favicon-96x96.png" sizes="96x96" />
 		<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-		<link rel="shortcut icon" href="/static/favicon.ico" />
+		<link rel="shortcut icon" href="/static/favicon.svg" />
 		<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
 		<meta name="apple-mobile-web-app-title" content="Open WebUI" />
 
@@ -83,15 +83,15 @@
 
 					if (isDarkMode) {
 						const darkImage = new Image();
-						darkImage.src = '/static/splash-dark.png';
+						darkImage.src = '/static/splash-dark.svg';
 
 						darkImage.onload = () => {
-							logo.src = '/static/splash-dark.png';
-							logo.style.filter = ''; // Ensure no inversion is applied if splash-dark.png exists
+							logo.src = '/static/splash-dark.svg';
+							logo.style.filter = ''; // Ensure no inversion is applied if splash-dark.svg exists
 						};
 
 						darkImage.onerror = () => {
-							logo.style.filter = 'invert(1)'; // Invert image if splash-dark.png is missing
+							logo.style.filter = 'invert(1)'; // Invert image if splash-dark.svg is missing
 						};
 					}
 				}
@@ -129,7 +129,7 @@
 					left: 50%;
 					transform: translateX(-50%);
 				"
-				src="/static/splash.png"
+				src="/static/splash.svg"
 			/>
 
 			<div
@@ -149,7 +149,7 @@
 				<img
 					id="logo-her"
 					style="width: auto; height: 13rem"
-					src="/static/splash.png"
+					src="/static/splash.svg"
 					class="animate-pulse-fast"
 				/>
 

@@ -1632,7 +1632,10 @@
 			},
 			`${WEBUI_BASE_URL}/api`
 		).catch(async (error) => {
-			toast.error(`${error}`);
+			//524 에러는 토스트 안띄움
+			if (!error.toString().includes('524error')) {
+				toast.error(`${error}`);
+			}
 
 			responseMessage.error = {
 				content: error

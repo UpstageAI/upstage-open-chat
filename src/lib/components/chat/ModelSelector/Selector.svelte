@@ -279,7 +279,7 @@
 	};
 
 	onMount(async () => {
-		ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => false);
+		//ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => false);
 
 		if (items) {
 			tags = items.flatMap((item) => item.model?.tags ?? []).map((tag) => tag.name);
@@ -457,7 +457,7 @@
 					</div>
 				{/if}
 
-				{#each filteredItems.filter((item) => !(item.model?.info?.meta?.hidden ?? false)) as item, index}
+				{#each filteredItems.sort((a, b) => (b.value.toLowerCase().startsWith('solar') ? 1 : 0) - (a.value.toLowerCase().startsWith('solar') ? 1 : 0)).filter((item) => !(item.model?.info?.meta?.hidden ?? false)) as item, index}
 					<button
 						aria-label="model-item"
 						class="flex w-full text-left font-medium line-clamp-1 select-none items-center rounded-button py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 outline-hidden transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer data-highlighted:bg-muted {index ===
@@ -494,7 +494,7 @@
 												placement="top-start"
 											>
 												<img
-													src={item.model?.info?.meta?.profile_image_url ?? '/static/favicon.png'}
+													src={item.model?.info?.meta?.profile_image_url ?? (item.label?.toLowerCase().includes('solar') ? '/static/favicon.svg' : '/static/favicon.svg')}
 													alt="Model"
 													class="rounded-full size-5 flex items-center mr-2"
 												/>

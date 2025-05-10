@@ -585,7 +585,7 @@
 		<div class={`shrink-0 ltr:mr-3 rtl:ml-3`}>
 			<ProfileImage
 				src={model?.info?.meta?.profile_image_url ??
-					($i18n.language === 'dg-DG' ? `/doge.png` : `${WEBUI_BASE_URL}/static/favicon.png`)}
+					($i18n.language === 'dg-DG' ? `/doge.png` : `${WEBUI_BASE_URL}/static/favicon.svg`)}
 				className={'size-8'}
 			/>
 		</div>
@@ -762,6 +762,9 @@
 								</div>
 							</div>
 						{:else}
+							{@const status = (
+								message?.statusHistory ?? [...(message?.status ? [message?.status] : [])]
+							).at(-1)}
 							<div class="w-full flex flex-col relative" id="response-content-container">
 								{#if message.content === '' && !message.error}
 									<Skeleton />
@@ -833,9 +836,25 @@
 										}}
 									/>
 								{/if}
-
-								{#if message?.error}
-									<Error content={message?.error?.content ?? message.content} />
+								
+								{#if message?.error && status?.action !== 'web_search'}
+									{#if message?.error?.content.toString().includes('524error')}
+										<!-- <div class="status-description flex items-center gap-2 py-0.5">
+											<div class="">
+												<Spinner className="size-4" />
+											</div>
+											<div class="flex flex-col justify-center -space-y-0.5">
+												<div
+													class="shimmer text-gray-500 dark:text-gray-500 text-base line-clamp-1 text-wrap"
+												>
+													{$i18n.t('Generating response...')}
+												</div>
+											</div>
+										</div>
+										<Skeleton /> -->
+									{:else}
+										<Error content={message?.error?.content ?? message.content} />
+									{/if}
 								{/if}
 
 								{#if (message?.sources || message?.citations) && (model?.info?.meta?.capabilities?.citations ?? true)}
