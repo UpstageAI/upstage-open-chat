@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DOMPurify from 'dompurify';
 
-	import { getVersionUpdates, getWebhookUrl, updateWebhookUrl } from '$lib/apis';
+	import { getWebhookUrl, updateWebhookUrl } from '$lib/apis';
 	import {
 		getAdminConfig,
 		getLdapConfig,
@@ -81,12 +81,11 @@
 
 	const checkForVersionUpdates = async () => {
 		updateAvailable = null;
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
-			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
-			};
-		});
+		// API 호출 제거: 정적 버전 정보로 대체
+		version = {
+			current: WEBUI_VERSION,
+			latest: WEBUI_VERSION
+		};
 
 		console.info(version);
 

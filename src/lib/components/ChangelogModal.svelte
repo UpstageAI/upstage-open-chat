@@ -5,10 +5,10 @@
 	import { WEBUI_NAME, config, settings } from '$lib/stores';
 
 	import { WEBUI_VERSION } from '$lib/constants';
-	import { getChangelog } from '$lib/apis';
 
 	import Modal from './common/Modal.svelte';
 	import { updateUserSettings } from '$lib/apis/users';
+	import { getChangelog } from '$lib/apis';
 
 	const i18n = getContext('i18n');
 
@@ -16,10 +16,13 @@
 
 	let changelog = null;
 
-	onMount(async () => {
+	async function loadChangelog() {
 		const res = await getChangelog();
 		changelog = res;
-	});
+	}
+
+	// 필요할 때만 가져오도록 변경
+	// onMount에서 자동 호출 제거
 </script>
 
 <Modal bind:show size="lg">
