@@ -103,7 +103,19 @@ async def chat_file_parsing_handler(
                 content_hash = calculate_sha256_string(text_content)
                 Files.update_file_hash_by_id(file_id, content_hash)
 
-                if not request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL:
+                # 파일 크기에 따라 임베딩 우회 여부 결정
+                text_content_size = len(text_content.encode('utf-8'))
+                auto_bypass_threshold = request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD
+                manual_setting = request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL
+                
+                if manual_setting is True:
+                    should_bypass = True
+                else:
+                    should_bypass = text_content_size <= auto_bypass_threshold
+                
+                log.info(f"Parsed file content size: {text_content_size} bytes, threshold: {auto_bypass_threshold} bytes, bypass: {should_bypass}")
+                
+                if not should_bypass:
                     result = save_docs_to_vector_db(
                         request,
                         docs=docs,

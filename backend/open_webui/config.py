@@ -2095,6 +2095,13 @@ RAG_FULL_CONTEXT = PersistentConfig(
     os.getenv("RAG_FULL_CONTEXT", "False").lower() == "true",
 )
 
+# 파일 업로드용 자동 임베딩 우회 임계값 (기본값: 50KB)
+AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD = PersistentConfig(
+    "AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD",
+    "rag.file.auto_bypass_size_threshold",
+    int(os.getenv("AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD", "600")),
+)
+
 RAG_FILE_MAX_COUNT = PersistentConfig(
     "RAG_FILE_MAX_COUNT",
     "rag.file.max_count",

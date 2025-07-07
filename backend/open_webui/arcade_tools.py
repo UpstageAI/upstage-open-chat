@@ -6,6 +6,8 @@ import time
 from typing import Optional
 from uuid import uuid4
 from fastapi import Request
+import asyncio
+import concurrent.futures
 
 
 log = logging.getLogger(__name__)
@@ -609,7 +611,7 @@ async def chat_completion_arcade_tools_handler(
     return body, {"sources": sources}
 
 
-def get_arcade_tools(request: Request, user) -> list["ToolUserResponse"]:
+async def get_arcade_tools(request: Request, user) -> list["ToolUserResponse"]:
     """Extract and process arcade tools from the application state."""
     print("[DEBUG] get_arcade_tools called")
     
@@ -636,6 +638,10 @@ def get_arcade_tools(request: Request, user) -> list["ToolUserResponse"]:
     for idx, tool in enumerate(request.app.state.ARCADE_TOOLS):
         arcade_tool_mapper[tool.qualified_name] = tool
 
+    # Prepare auth tasks for parallel execution
+    auth_tasks = []
+    tool_kit_info = []
+
     for idx, tool_kit in enumerate(request.app.state.config.ARCADE_TOOLS_CONFIG):
         if tool_kit.get('enabled'):
             print(f"[DEBUG] Processing enabled tool_kit: {tool_kit.get('toolkit')}")
@@ -644,7 +650,6 @@ def get_arcade_tools(request: Request, user) -> list["ToolUserResponse"]:
             auth_id = None
             auth_provider_id = None 
             auth_provider_type = None
-            auth_result = None
             
             for tool in tool_kit.get('tools', []):
                 tool_name = tool.get('name')
@@ -675,26 +680,53 @@ def get_arcade_tools(request: Request, user) -> list["ToolUserResponse"]:
                 else:
                     auth_requirement["id"] = None
                 log.info(f"{auth_requirement=}")
-                auth_result = client.auth.authorize(auth_requirement=auth_requirement, user_id=user.id)
-            
-            # Add tool regardless of auth result
-            arcade_tools.append(
-                ToolUserResponse(
-                    **{
-                        "id": f"arcade:{idx}",
-                        "user_id": f"arcade:{idx}",
-                        "name": tool_kit.get('toolkit'),
-                        "meta": {
-                            "description": tool_kit.get('description'),
-                            "auth_completed": True if auth_result and auth_result.status == "completed" else (True if not auth_result else False),
-                            "auth_url": auth_result.url if auth_result else None,
-                        },
-                        "access_control": None,
-                        "updated_at": int(time.time()),
-                        "created_at": int(time.time()),
-                    }   
+                
+                # Create auth task for async execution
+                auth_task = asyncio.create_task(
+                    asyncio.to_thread(
+                        client.auth.authorize,
+                        auth_requirement=auth_requirement,
+                        user_id=user.id
+                    )
                 )
+                auth_tasks.append(auth_task)
+                tool_kit_info.append((idx, tool_kit, len(auth_tasks) - 1))  # Store auth task index
+            else:
+                # No auth required
+                tool_kit_info.append((idx, tool_kit, -1))  # -1 means no auth
+    
+    # Execute all auth requests in parallel
+    auth_results = []
+    if auth_tasks:
+        auth_results = await asyncio.gather(*auth_tasks, return_exceptions=True)
+    
+    # Process results
+    for idx, tool_kit, auth_task_idx in tool_kit_info:
+        auth_result = None
+        if auth_task_idx >= 0 and auth_task_idx < len(auth_results):
+            auth_result = auth_results[auth_task_idx]
+            if isinstance(auth_result, Exception):
+                print(f"[DEBUG] Auth failed for {tool_kit.get('toolkit')}: {auth_result}")
+                auth_result = None
+        
+        # Add tool regardless of auth result
+        arcade_tools.append(
+            ToolUserResponse(
+                **{
+                    "id": f"arcade:{idx}",
+                    "user_id": f"arcade:{idx}",
+                    "name": tool_kit.get('toolkit'),
+                    "meta": {
+                        "description": tool_kit.get('description'),
+                        "auth_completed": True if auth_result and auth_result.status == "completed" else (True if not auth_result else False),
+                        "auth_url": auth_result.url if auth_result else None,
+                    },
+                    "access_control": None,
+                    "updated_at": int(time.time()),
+                    "created_at": int(time.time()),
+                }   
             )
-            print(f"[DEBUG] Added tool: {tool_kit.get('toolkit')}")
+        )
+        print(f"[DEBUG] Added tool: {tool_kit.get('toolkit')}")
     
     return arcade_tools
