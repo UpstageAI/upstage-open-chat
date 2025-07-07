@@ -1,0 +1,71 @@
+name: openup.upstage.ai - 코스믹 환경 배포 트리거
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'release/*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  trigger-cosmic-flow:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_TOKEN: ${{ secrets.DEPLOYMENT_USER_TOKEN }} # 배포용 토큰
+      DEPLOY_USER: ${{ secrets.DEPLOYMENT_USER }} # 배포용 사용자명
+      DEPLOY_EMAIL: ${{ secrets.DEPLOYMENT_USER_EMAIL }} # 배포용 이메일
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 전체 커밋 히스토리 가져오기
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "${{ env.DEPLOY_USER }}"
+          git config --global user.email "${{ env.DEPLOY_EMAIL }}"
+
+      - name: Determine ref type and source ref
+        id: ref-info
+        run: |
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            echo "ref_type=tag" >> $GITHUB_OUTPUT
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            VERSION=${TAG_NAME#release/}
+            echo "source_ref=cosmic-release/openup/${VERSION}" >> $GITHUB_OUTPUT
+            echo "push_ref=cosmic-release/openup/${VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "ref_type=branch" >> $GITHUB_OUTPUT
+            echo "source_ref=release/dev/openup" >> $GITHUB_OUTPUT
+            echo "push_ref=release/dev/openup" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push to release branch or tag
+        if: steps.ref-info.outputs.ref_type == 'branch'
+        run: |
+          git push -f origin HEAD:${{ steps.ref-info.outputs.push_ref }}
+
+      - name: Trigger API deployment
+        env:
+          # 현재 워크플로우가 GitHub Actions의 기본 토큰(GITHUB_TOKEN)을 사용해 푸시하면 다른 워크플로우가 트리거되지 않음
+          GH_TOKEN: ${{ env.DEPLOY_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            https://api.github.com/repos/UpstageAI/cosmic-flow/actions/workflows/cosmic-public-workflow.yaml/dispatches \
+            -d '{
+              "ref": "main",
+              "inputs": {
+                "config_path": "cosmic.yaml",
+                "cosmic_branch": "main",
+                "source_repo": "${{ github.repository }}",
+                "source_ref": "${{ steps.ref-info.outputs.source_ref }}",
+                "source_sha": "${{ github.sha }}",
+                "ref_type": "${{ steps.ref-info.outputs.ref_type }}"
+              }
+            }'

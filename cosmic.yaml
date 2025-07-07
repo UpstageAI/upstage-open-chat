@@ -1,0 +1,112 @@
+projects:
+  - name: openup
+    projectGroup: team-openup
+    projectNamespace: openup
+    projectRootPath: ./
+    build:
+      buildImage:
+        dockerContextPath: "./"
+        dockerfilePath: "./Dockerfile"
+        dockerBuildOptions: "--platform linux/amd64 --build-arg PROJECT_NAME=openup --network=host"
+    deploy:
+      default:
+        helmChartBase: openup-deploy
+        enableHttpScaledObject: false
+        healthCheckPath: /
+        containerPort: 8080
+        ingressReadTimeoutSec: "600"
+        ingressConnectTimeoutSec: "180"
+        phase:
+          prod:
+            ingressHosts:
+              - openup.upstage.ai
+            clusters:
+              - cosmic-prod
+            noticeSlackChannelIdList:
+              - C094MJG1TGU
+            replicaCount: 1
+            requestCpu: 4000m
+            requestMemory: 12Gi
+            limitCpu: 4000m
+            limitMemory: 12Gi
+            needApprove: false
+            env:
+              ACTIVE_PROFILE: prod
+              ENABLE_OAUTH_SIGNUP: "true"
+              GOOGLE_CLIENT_ID: "1057771651397-lj4jd53qjq0748i9711ob3vrdjjbdabu.apps.googleusercontent.com"
+              ENABLE_OLLAMA_API: "false"
+              ENABLE_RAG_WEB_SEARCH: "true"
+              RAG_WEB_SEARCH_ENGINE: "tavily"
+              OPENID_PROVIDER_URL: "https://accounts.google.com/.well-known/openid-configuration"
+              ENABLE_UPSTAGE_API: "true"
+              UPSTAGE_API_BASE_URL: "https://api.upstage.ai/v1"
+              GOOGLE_REDIRECT_URI: https://openup.upstage.ai/oauth/google/callback
+              WEBUI_URL: https://openup.upstage.ai
+              RAG_EMBEDDING_ENGINE: "upstage"
+              RAG_EMBEDDING_MODEL: "embedding-passage"
+              RAG_EMBEDDING_BATCH_SIZE: "10"
+              CHUNK_SIZE: "2000"
+              CHUNK_OVERLAP: "200"
+              RAG_TEXT_SPLITTER: "token"
+              TASK_MODEL: "solar-mini"
+              SCARF_NO_ANALYTICS: "true"
+              DO_NOT_TRACK: "true"
+              ANONYMIZED_TELEMETRY: "false"
+              GLOBAL_LOG_LEVEL: "INFO"
+              ENABLE_EVALUATION_ARENA_MODELS: "false"
+              OAUTH_ALLOWED_DOMAINS: "*"
+              ENABLE_ALLOWED_EMAIL_DOMAINS: "true"
+              DEFAULT_USER_ROLE: user
+              ARCADE_PATTERNS: "Google.*, Math.*, Search.SearchNewsStories, Search.SearchYoutubeVideos, Web.ScrapeUrl"
+            secretEnv:
+              DAUM_API_KEY: OPENUP_DAUM_API_KEY
+              GOOGLE_CLIENT_SECRET: OPENUP_GOOGLE_CLIENT_SECRET
+              UPSTAGE_API_KEY: OPENUP_UPSTAGE_API_KEY
+              TAVILY_API_KEY: OPENUP_TAVILY_API_KEY
+              ARCADE_API_KEY: OPENUP_ARCADE_API_KEY
+          dev:
+            ingressHosts:
+              - dev-openup.cosmic.upstage.ai
+            clusters:
+              - cosmic-prod
+            noticeSlackChannelIdList:
+              - C094MJG1TGU
+            replicaCount: 1
+            requestCpu: 4000m
+            requestMemory: 12Gi
+            limitCpu: 4000m
+            limitMemory: 12Gi
+            env:
+              ACTIVE_PROFILE: dev
+              ENABLE_OAUTH_SIGNUP: "true"
+              GOOGLE_CLIENT_ID: "1057771651397-c7p85df4r4hue1f7hfinjfekpeptg1en.apps.googleusercontent.com"
+              ENABLE_OLLAMA_API: "false"
+              ENABLE_RAG_WEB_SEARCH: "true"
+              RAG_WEB_SEARCH_ENGINE: "tavily"
+              OPENID_PROVIDER_URL: "https://accounts.google.com/.well-known/openid-configuration"
+              ENABLE_UPSTAGE_API: "true"
+              UPSTAGE_API_BASE_URL: "https://api.upstage.ai/v1"
+              GOOGLE_REDIRECT_URI: https://dev-openup.cosmic.upstage.ai/oauth/google/callback
+              WEBUI_URL: https://dev-openup.cosmic.upstage.ai
+              RAG_EMBEDDING_ENGINE: "upstage"
+              RAG_EMBEDDING_MODEL: "embedding-passage"
+              RAG_EMBEDDING_BATCH_SIZE: "10"
+              CHUNK_SIZE: "2000"
+              CHUNK_OVERLAP: "200"
+              RAG_TEXT_SPLITTER: "token"
+              TASK_MODEL: "solar-mini"
+              SCARF_NO_ANALYTICS: "true"
+              DO_NOT_TRACK: "true"
+              ANONYMIZED_TELEMETRY: "false"
+              GLOBAL_LOG_LEVEL: "INFO"
+              ENABLE_EVALUATION_ARENA_MODELS: "false"
+              OAUTH_ALLOWED_DOMAINS: "upstage.ai"
+              ENABLE_ALLOWED_EMAIL_DOMAINS: "true"
+              DEFAULT_USER_ROLE: user
+              ARCADE_PATTERNS: "Google.*, Math.*, Search.SearchNewsStories, Search.SearchYoutubeVideos, Web.ScrapeUrl"
+            secretEnv:
+              DAUM_API_KEY: DEV_OPENUP_DAUM_API_KEY
+              GOOGLE_CLIENT_SECRET: DEV_OPENUP_GOOGLE_CLIENT_SECRET
+              UPSTAGE_API_KEY: DEV_OPENUP_UPSTAGE_API_KEY
+              TAVILY_API_KEY: DEV_OPENUP_TAVILY_API_KEY
+              ARCADE_API_KEY: DEV_OPENUP_ARCADE_API_KEY
