@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getVersionUpdates } from '$lib/apis';
+	// getVersionUpdates API 호출 제거
 	import { getOllamaVersion } from '$lib/apis/ollama';
 	import { WEBUI_BUILD_HASH, WEBUI_VERSION } from '$lib/constants';
 	import { WEBUI_NAME, config, showChangelog } from '$lib/stores';
@@ -20,12 +20,11 @@
 
 	const checkForVersionUpdates = async () => {
 		updateAvailable = null;
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
-			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
-			};
-		});
+		// API 호출 제거: 정적 버전 정보로 대체
+		version = {
+			current: WEBUI_VERSION,
+			latest: WEBUI_VERSION
+		};
 
 		console.log(version);
 
