@@ -2099,7 +2099,7 @@ RAG_FULL_CONTEXT = PersistentConfig(
 AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD = PersistentConfig(
     "AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD",
     "rag.file.auto_bypass_size_threshold",
-    int(os.getenv("AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD", "600")),
+    int(os.getenv("AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD", "50000")),
 )
 
 RAG_FILE_MAX_COUNT = PersistentConfig(
