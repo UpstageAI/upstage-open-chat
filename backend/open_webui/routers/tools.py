@@ -79,7 +79,7 @@ async def get_tools(request: Request, user=Depends(get_verified_user)):
         )
 
     # Add arcade tools
-    arcade_tools = get_arcade_tools(request, user)
+    arcade_tools = await get_arcade_tools(request, user)
     print(f"[DEBUG] Arcade tools: {len(arcade_tools)} found")
     tools.extend(arcade_tools)
 

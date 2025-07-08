@@ -424,6 +424,7 @@ async def get_rag_config(request: Request, user=Depends(get_admin_user)):
         "TOP_K": request.app.state.config.TOP_K,
         "BYPASS_EMBEDDING_AND_RETRIEVAL": request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL,
         "RAG_FULL_CONTEXT": request.app.state.config.RAG_FULL_CONTEXT,
+        "AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD": request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD,
         # Hybrid search settings
         "ENABLE_RAG_HYBRID_SEARCH": request.app.state.config.ENABLE_RAG_HYBRID_SEARCH,
         "TOP_K_RERANKER": request.app.state.config.TOP_K_RERANKER,
@@ -476,6 +477,7 @@ async def get_rag_config(request: Request, user=Depends(get_admin_user)):
             "WEB_SEARCH_CONCURRENT_REQUESTS": request.app.state.config.WEB_SEARCH_CONCURRENT_REQUESTS,
             "WEB_SEARCH_DOMAIN_FILTER_LIST": request.app.state.config.WEB_SEARCH_DOMAIN_FILTER_LIST,
             "BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL": request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL,
+            "AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD": request.app.state.config.AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD,
             "BYPASS_WEB_SEARCH_WEB_LOADER": request.app.state.config.BYPASS_WEB_SEARCH_WEB_LOADER,
             "SEARXNG_QUERY_URL": request.app.state.config.SEARXNG_QUERY_URL,
             "YACY_QUERY_URL": request.app.state.config.YACY_QUERY_URL,
@@ -561,6 +563,7 @@ class WebConfig(BaseModel):
     WEB_SEARCH_CONCURRENT_REQUESTS: Optional[int] = None
     WEB_SEARCH_DOMAIN_FILTER_LIST: Optional[List[str]] = []
     BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: Optional[bool] = None
+    AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD: Optional[int] = None
     BYPASS_WEB_SEARCH_WEB_LOADER: Optional[bool] = None
     SEARXNG_QUERY_URL: Optional[str] = None
     YACY_QUERY_URL: Optional[str] = None
@@ -610,6 +613,7 @@ class ConfigForm(BaseModel):
     TOP_K: Optional[int] = None
     BYPASS_EMBEDDING_AND_RETRIEVAL: Optional[bool] = None
     RAG_FULL_CONTEXT: Optional[bool] = None
+    AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD: Optional[int] = None
 
     # Hybrid search settings
     ENABLE_RAG_HYBRID_SEARCH: Optional[bool] = None
@@ -689,6 +693,11 @@ async def update_rag_config(
         form_data.RAG_FULL_CONTEXT
         if form_data.RAG_FULL_CONTEXT is not None
         else request.app.state.config.RAG_FULL_CONTEXT
+    )
+    request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD = (
+        form_data.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD
+        if form_data.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD is not None
+        else request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD
     )
 
     # Hybrid search settings
@@ -934,6 +943,9 @@ async def update_rag_config(
         request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = (
             form_data.web.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL
         )
+        request.app.state.config.AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD = (
+            form_data.web.AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD
+        )
         request.app.state.config.BYPASS_WEB_SEARCH_WEB_LOADER = (
             form_data.web.BYPASS_WEB_SEARCH_WEB_LOADER
         )
@@ -1019,6 +1031,8 @@ async def update_rag_config(
         "TOP_K": request.app.state.config.TOP_K,
         "BYPASS_EMBEDDING_AND_RETRIEVAL": request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL,
         "RAG_FULL_CONTEXT": request.app.state.config.RAG_FULL_CONTEXT,
+        "AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD": request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD,
+
         # Hybrid search settings
         "ENABLE_RAG_HYBRID_SEARCH": request.app.state.config.ENABLE_RAG_HYBRID_SEARCH,
         "TOP_K_RERANKER": request.app.state.config.TOP_K_RERANKER,
@@ -1071,6 +1085,7 @@ async def update_rag_config(
             "WEB_SEARCH_CONCURRENT_REQUESTS": request.app.state.config.WEB_SEARCH_CONCURRENT_REQUESTS,
             "WEB_SEARCH_DOMAIN_FILTER_LIST": request.app.state.config.WEB_SEARCH_DOMAIN_FILTER_LIST,
             "BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL": request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL,
+            "AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD": request.app.state.config.AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD,
             "BYPASS_WEB_SEARCH_WEB_LOADER": request.app.state.config.BYPASS_WEB_SEARCH_WEB_LOADER,
             "SEARXNG_QUERY_URL": request.app.state.config.SEARXNG_QUERY_URL,
             "YACY_QUERY_URL": request.app.state.config.YACY_QUERY_URL,
@@ -1949,7 +1964,21 @@ async def process_web_search(
             doc.metadata.get("source") for doc in docs if doc.metadata.get("source")
         ]  # only keep the urls returned by the loader
 
-        if request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL:
+        # 문서 크기를 계산하여 자동으로 임베딩 검색 우회를 결정
+        total_content_size = sum(len(doc.page_content.encode('utf-8')) for doc in docs)
+        auto_bypass_threshold = request.app.state.config.AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD
+        
+        # 수동 설정: True(항상 바이패스), False/None(자동 결정)
+        manual_setting = request.app.state.config.BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL
+        if manual_setting is True:
+            should_bypass = True  # 항상 바이패스
+        else:
+            # False이거나 None이면 자동 결정
+            should_bypass = total_content_size <= auto_bypass_threshold
+        
+        log.info(f"Web search content size: {total_content_size} bytes, threshold: {auto_bypass_threshold} bytes, bypass: {should_bypass}")
+
+        if should_bypass:
             return {
                 "status": True,
                 "collection_name": None,

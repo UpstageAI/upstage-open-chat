@@ -2095,6 +2095,13 @@ RAG_FULL_CONTEXT = PersistentConfig(
     os.getenv("RAG_FULL_CONTEXT", "False").lower() == "true",
 )
 
+# 파일 업로드용 자동 임베딩 우회 임계값 (기본값: 50KB)
+AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD = PersistentConfig(
+    "AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD",
+    "rag.file.auto_bypass_size_threshold",
+    int(os.getenv("AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD", "50000")),
+)
+
 RAG_FILE_MAX_COUNT = PersistentConfig(
     "RAG_FILE_MAX_COUNT",
     "rag.file.max_count",
@@ -2224,7 +2231,7 @@ TIKTOKEN_ENCODING_NAME = PersistentConfig(
 
 
 CHUNK_SIZE = PersistentConfig(
-    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "1000"))
+    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "800"))  # 1000에서 800으로 줄임
 )
 CHUNK_OVERLAP = PersistentConfig(
     "CHUNK_OVERLAP",
@@ -2356,9 +2363,15 @@ WEB_SEARCH_ENGINE = PersistentConfig(
 BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = PersistentConfig(
     "BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL",
     "rag.web.search.bypass_embedding_and_retrieval",
-    os.getenv("BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL", "False").lower() == "true",
+    (os.getenv("BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL", "").lower() == "true") 
+    if os.getenv("BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL") else None,
 )
 
+AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD = PersistentConfig(
+    "AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD",
+    "rag.web.search.auto_bypass_size_threshold",
+    int(os.getenv("AUTO_BYPASS_WEB_SEARCH_EMBEDDING_SIZE_THRESHOLD", "50000")),  # 50KB 기본값
+)
 
 BYPASS_WEB_SEARCH_WEB_LOADER = PersistentConfig(
     "BYPASS_WEB_SEARCH_WEB_LOADER",

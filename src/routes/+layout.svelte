@@ -598,7 +598,8 @@
 						$socket.emit('user-join', { auth: { token: sessionUser.token } });
 
 						await user.set(sessionUser);
-						await config.set(await getBackendConfig());
+						// backendConfig 재사용하여 중복 API 호출 방지
+						await config.set(backendConfig);
 					} else {
 						// Redirect Invalid Session User to /auth Page
 						localStorage.removeItem('token');

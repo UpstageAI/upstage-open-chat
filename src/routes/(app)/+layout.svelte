@@ -12,7 +12,7 @@
 
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
 	import { getFunctions } from '$lib/apis/functions';
-	import { getModels, getToolServersData, getVersionUpdates } from '$lib/apis';
+	import { getModels, getToolServersData } from '$lib/apis';
 	import { getAllTags } from '$lib/apis/chats';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getTools } from '$lib/apis/tools';
@@ -106,6 +106,8 @@
 				settings.set(localStorageSettings);
 			}
 
+			// 모델 데이터를 비동기적으로 로드
+
 			models.set(
 				await getModels(
 					localStorage.token,
@@ -113,9 +115,20 @@
 				)
 			);
 
-			banners.set(await getBanners(localStorage.token));
-			tools.set(await getTools(localStorage.token));
-			toolServers.set(await getToolServersData($i18n, $settings?.toolServers ?? []));
+			// 배너 데이터를 비동기적으로 로드
+			setTimeout(async () => {
+				banners.set(await getBanners(localStorage.token));
+			}, 300);
+
+			// 화면이 로드된 후에 tools API 호출하도록 지연
+			setTimeout(async () => {
+				tools.set(await getTools(localStorage.token));
+			}, 500);
+
+			// toolServers 데이터를 비동기적으로 로드
+			setTimeout(async () => {
+				toolServers.set(await getToolServersData($i18n, $settings?.toolServers ?? []));
+			}, 400);
 
 			document.addEventListener('keydown', async function (event) {
 				const isCtrlPressed = event.ctrlKey || event.metaKey; // metaKey is for Cmd key on Mac
@@ -244,12 +257,11 @@
 	});
 
 	const checkForVersionUpdates = async () => {
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
-			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
-			};
-		});
+		// API 호출 제거: 정적 버전 정보로 대체
+		version = {
+			current: WEBUI_VERSION,
+			latest: WEBUI_VERSION
+		};
 	};
 </script>
 

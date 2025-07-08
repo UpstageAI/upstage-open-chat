@@ -43,6 +43,49 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.retrievers import BaseRetriever
 
 
+def should_bypass_file_embedding(request, file) -> bool:
+    """
+    파일 크기에 따라 임베딩 검색을 우회할지 결정
+    """
+    # 수동 설정 확인
+    manual_setting = request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL
+    if manual_setting is True:
+        return True  # 항상 우회
+    
+    # False이거나 None이면 자동 결정
+    try:
+        # 파일 내용 크기 계산
+        content_size = 0
+        
+        if file.get("type") == "collection":
+            # 컬렉션 타입의 경우 모든 파일 크기 합산
+            file_ids = file.get("data", {}).get("file_ids", [])
+            for file_id in file_ids:
+                file_object = Files.get_file_by_id(file_id)
+                if file_object and file_object.data.get("content"):
+                    content_size += len(file_object.data.get("content", "").encode('utf-8'))
+        elif file.get("id"):
+            # 단일 파일의 경우
+            file_object = Files.get_file_by_id(file.get("id"))
+            if file_object and file_object.data.get("content"):
+                content_size = len(file_object.data.get("content", "").encode('utf-8'))
+        elif file.get("file", {}).get("data", {}).get("content"):
+            # 직접 컨텐츠가 있는 경우
+            content_size = len(file.get("file", {}).get("data", {}).get("content", "").encode('utf-8'))
+        
+        # 임계값과 비교
+        auto_bypass_threshold = request.app.state.config.AUTO_BYPASS_FILE_EMBEDDING_SIZE_THRESHOLD
+        should_bypass = content_size <= auto_bypass_threshold
+        
+        log.info(f"File content size: {content_size} bytes, threshold: {auto_bypass_threshold} bytes, bypass: {should_bypass}")
+        return should_bypass
+        
+    except Exception as e:
+        log.exception(f"Error calculating file size for embedding bypass: {e}")
+        # 에러 발생 시 수동 설정으로 fallback
+        return bool(manual_setting)
+
+
 class VectorSearchRetriever(BaseRetriever):
     collection_name: Any
     embedding_function: Any
@@ -463,6 +506,11 @@ def get_sources_from_files(
     relevant_contexts = []
 
     for file in files:
+        # Document threshold 체크 및 로그 출력 (항상 실행)
+        if file.get("type") != "web_search":
+            should_bypass = should_bypass_file_embedding(request, file)
+        else:
+            should_bypass = False
 
         context = None
         if file.get("docs"):
@@ -479,9 +527,9 @@ def get_sources_from_files(
             }
         elif (
             file.get("type") != "web_search"
-            and request.app.state.config.BYPASS_EMBEDDING_AND_RETRIEVAL
+            and should_bypass
         ):
-            # BYPASS_EMBEDDING_AND_RETRIEVAL
+            # Automatic embedding bypass based on file size or manual setting
             if file.get("type") == "collection":
                 file_ids = file.get("data", {}).get("file_ids", [])
 
