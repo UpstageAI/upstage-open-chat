@@ -506,6 +506,11 @@ def get_sources_from_files(
     relevant_contexts = []
 
     for file in files:
+        # Document threshold 체크 및 로그 출력 (항상 실행)
+        if file.get("type") != "web_search":
+            should_bypass = should_bypass_file_embedding(request, file)
+        else:
+            should_bypass = False
 
         context = None
         if file.get("docs"):
@@ -522,7 +527,7 @@ def get_sources_from_files(
             }
         elif (
             file.get("type") != "web_search"
-            and should_bypass_file_embedding(request, file)
+            and should_bypass
         ):
             # Automatic embedding bypass based on file size or manual setting
             if file.get("type") == "collection":
