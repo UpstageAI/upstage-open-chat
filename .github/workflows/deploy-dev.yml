@@ -20,6 +20,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             export PATH=/home/ubuntu/.nvm/versions/node/v20.19.2/bin:$PATH
             cd /home/ubuntu/upstage-open-chat/upstage-open-chat
             git reset --hard HEAD
