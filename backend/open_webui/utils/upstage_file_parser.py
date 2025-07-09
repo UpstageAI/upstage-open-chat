@@ -167,7 +167,7 @@ async def chat_file_parsing_handler(
         "type": "status",
         "data": {
             "action": "file_parsing",
-            "description": "All files parsed",
+            "description": "Parsed using Upstage’s Document Parser!",
             "done": True,
         },
     })
