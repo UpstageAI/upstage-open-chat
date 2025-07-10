@@ -162,12 +162,18 @@ ENABLE_PERSISTENT_CONFIG = (
 
 
 class PersistentConfig(Generic[T]):
-    def __init__(self, env_name: str, config_path: str, env_value: T):
+    def __init__(self, env_name: str, config_path: str, env_value: T, env_priority: bool = False):
         self.env_name = env_name
         self.config_path = config_path
         self.env_value = env_value
+        self.env_priority = env_priority
         self.config_value = get_config_value(config_path)
-        if self.config_value is not None and ENABLE_PERSISTENT_CONFIG:
+        
+        # If env_priority is True and environment variable is actually set, use env value
+        if env_priority and env_name in os.environ:
+            log.info(f"'{env_name}' loaded from environment variable (priority mode)")
+            self.value = env_value
+        elif self.config_value is not None and ENABLE_PERSISTENT_CONFIG:
             log.info(f"'{env_name}' loaded from the latest database entry")
             self.value = self.config_value
         else:
@@ -192,6 +198,11 @@ class PersistentConfig(Generic[T]):
         return super().__getattribute__(item)
 
     def update(self):
+        # If env_priority is True and environment variable is set, keep env value
+        if self.env_priority and self.env_name in os.environ:
+            # Don't update from DB if env variable has priority
+            return
+        
         new_value = get_config_value(self.config_path)
         if new_value is not None:
             self.value = new_value
@@ -1024,7 +1035,10 @@ DEFAULT_LOCALE = PersistentConfig(
 )
 
 DEFAULT_MODELS = PersistentConfig(
-    "DEFAULT_MODELS", "ui.default_models", os.environ.get("DEFAULT_MODELS", "")
+    "DEFAULT_MODELS", 
+    "ui.default_models", 
+    os.environ.get("DEFAULT_MODELS", "solar-pro2"),
+    env_priority=(os.environ.get("USE_DEFAULT_MODELS_ENV", "False").lower() == "true")
 )
 
 try:
