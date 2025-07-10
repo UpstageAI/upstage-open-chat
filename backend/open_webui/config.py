@@ -1051,6 +1051,10 @@ except Exception as e:
 if default_prompt_suggestions == []:
     default_prompt_suggestions = [
         {
+            "title": ["Upstage AI", "tell me more about Upstage AI"],
+            "content": "Tell me more about Upstage AI",
+        },
+        {
             "title": ["Help me study", "vocabulary for a college entrance exam"],
             "content": "Help me study vocabulary: write a sentence for me to fill in the blank, and I'll try to pick the correct option.",
         },

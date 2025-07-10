@@ -596,7 +596,6 @@ except Exception as e:
 # print(app.state.ARCADE_TOOLS)
 if app.state.config.ARCADE_TOOLS_CONFIG == []:
 
-
     arcade_tool_mapper = {}
     for tool in app.state.ARCADE_TOOLS:
         arcade_tool_mapper[tool.qualified_name] = tool
@@ -604,17 +603,25 @@ if app.state.config.ARCADE_TOOLS_CONFIG == []:
     for toolset in app.state.ARCADE_TOOLS_TO_DISPLAY.keys():
         arcade_tools = []
         for tool in app.state.ARCADE_TOOLS_TO_DISPLAY[toolset]:
+            # Add safety check to ensure tool exists in mapper
+            if tool in arcade_tool_mapper:
                 arcade_tools.append({
                     "name": tool,
                     "description": arcade_tool_mapper[tool].description,
+                    "enabled": True,
+                })
+            else:
+                # Log warning for missing tool but continue processing
+                log.warning(f"Arcade tool '{tool}' not found in available tools, skipping...")
+        
+        # Only add toolset if it has valid tools
+        if arcade_tools:
+            app.state.config.ARCADE_TOOLS_CONFIG.append({
+                "toolkit": toolset,
+                "description": None,
                 "enabled": True,
+                "tools": arcade_tools,
             })
-        app.state.config.ARCADE_TOOLS_CONFIG.append({
-            "toolkit": toolset,
-            "description": None,
-            "enabled": True,
-            "tools": arcade_tools,
-        })
 
 
 ########################################
