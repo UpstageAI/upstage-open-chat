@@ -58,6 +58,7 @@ projects:
               ENABLE_ALLOWED_EMAIL_DOMAINS: "true"
               DEFAULT_USER_ROLE: user
               ARCADE_PATTERNS: "Google.*, Math.*, Search.SearchNewsStories, Search.SearchYoutubeVideos, Web.ScrapeUrl"
+              DEFAULT_MODELS: solar-pro2
             secretEnv:
               DAUM_API_KEY: OPENUP_DAUM_API_KEY
               GOOGLE_CLIENT_SECRET: OPENUP_GOOGLE_CLIENT_SECRET
@@ -104,6 +105,7 @@ projects:
               ENABLE_ALLOWED_EMAIL_DOMAINS: "true"
               DEFAULT_USER_ROLE: user
               ARCADE_PATTERNS: "Google.*, Math.*, Search.SearchNewsStories, Search.SearchYoutubeVideos, Web.ScrapeUrl"
+              DEFAULT_MODELS: solar-pro2
             secretEnv:
               DAUM_API_KEY: DEV_OPENUP_DAUM_API_KEY
               GOOGLE_CLIENT_SECRET: DEV_OPENUP_GOOGLE_CLIENT_SECRET
