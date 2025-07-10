@@ -229,6 +229,31 @@
 									{/if}
 								</div>
 
+								<!-- Experimental Demo Disclaimer -->
+								<div class="mt-3 mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+									<div class="text-xs font-medium text-blue-800 dark:text-blue-200 text-left space-y-1">
+										<div class="font-semibold">🧪 Experimental Demo by Upstage AI</div>
+										<div>
+											Showcasing 
+											<a href="https://console.upstage.ai/docs/capabilities/chat" target="_blank" class="font-medium underline hover:text-blue-600 dark:hover:text-blue-300">
+												Solar LLM
+											</a>
+											 and 
+											<a href="https://console.upstage.ai/docs/capabilities/document-digitization/document-parsing" target="_blank" class="font-medium underline hover:text-blue-600 dark:hover:text-blue-300">
+												Document AI
+											</a>
+											 capabilities. Use at your own risk - no warranty or guarantee provided.
+										</div>
+										<div class="mt-2 pt-1 border-t border-blue-200 dark:border-blue-700">
+											<span>Open source: </span>
+											<a href="https://github.com/UpstageAI/upstage-open-chat" target="_blank" class="font-medium underline hover:text-blue-600 dark:hover:text-blue-300">
+												GitHub
+											</a>
+											<span> • Contributions welcome!</span>
+										</div>
+									</div>
+								</div>
+
 								{#if $config?.onboarding ?? false}
 									<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
 										ⓘ {$WEBUI_NAME}

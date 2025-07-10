@@ -130,12 +130,15 @@
 					/>
 				</a>
 
-				<a href="https://github.com/open-webui/open-webui" target="_blank">
+				<a href="https://github.com/UpstageAI/upstage-open-chat" target="_blank">
 					<img
 						alt="Github Repo"
-						src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
+						src="https://img.shields.io/github/stars/UpstageAI/upstage-open-chat?style=social&label=Star us on Github"
 					/>
 				</a>
+				<div class="text-xs text-gray-500 mt-1">
+					Forked from <a href="https://github.com/open-webui/open-webui" target="_blank" class="underline">github.com/open-webui/open-webui</a>
+				</div>
 			</div>
 		{/if}
 

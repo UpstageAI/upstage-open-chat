@@ -218,7 +218,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
                     **(
                         {
                             "HTTP-Referer": "https://openwebui.com/",
-                            "X-Title": "Open WebUI",
+                            "X-Title": "Upstage OpenUp",
                         }
                         if "openrouter.ai" in url
                         else {}
@@ -799,7 +799,7 @@ async def generate_chat_completion(
         **(
             {
                 "HTTP-Referer": "https://openwebui.com/",
-                "X-Title": "Open WebUI",
+                "X-Title": "Upstage OpenUp",
             }
             if "openrouter.ai" in url
             else {}
