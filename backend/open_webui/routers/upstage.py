@@ -94,9 +94,8 @@ def get_model_list(idx):
                 "urlIdx": idx,
             }
             for model_id in [
-                "solar-pro",
-                "solar-mini",
-                "solar-pro2-preview"
+                "solar-pro2",
+                "solar-mini"
             ]
         ],
     }
@@ -340,7 +339,7 @@ async def get_all_models_responses(request: Request, user: UserModel) -> list:
             for model in (
                 model_list if isinstance(model_list, list) else model_list.get("data", [])
             ):
-                if model.get("name", "") == "solar-pro2-preview":
+                if model.get("name", "") == "solar-pro2":
                     model["reasoning_effort"] = True
             
             request_tasks.append(asyncio.ensure_future(asyncio.sleep(0, model_list)))
@@ -817,7 +816,7 @@ async def generate_chat_completion(
     features = metadata.get("features", {})
     if features:
         if features.get("reasoning_effort", False) == True:
-            if payload["model"] == "solar-pro2-preview":
+            if payload["model"] == "solar-pro2":
                 payload["reasoning_effort"] = "high"
 
     # Convert image_url to text using ocr

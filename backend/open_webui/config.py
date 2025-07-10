@@ -1024,7 +1024,7 @@ DEFAULT_LOCALE = PersistentConfig(
 )
 
 DEFAULT_MODELS = PersistentConfig(
-    "DEFAULT_MODELS", "ui.default_models", os.environ.get("DEFAULT_MODELS", "solar-pro2-preview")
+    "DEFAULT_MODELS", "ui.default_models", os.environ.get("DEFAULT_MODELS", "solar-pro2")
 )
 
 try:
