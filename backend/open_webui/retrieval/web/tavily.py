@@ -31,7 +31,7 @@ def search_tavily(
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
     }
-    data = {"query": query, "max_results": count}
+    data = {"query": query, "max_results": count, "include_raw_content": "text"}
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
 
