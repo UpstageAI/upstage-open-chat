@@ -167,16 +167,36 @@ def upload_file(
         if process:
             try:
                 # 🎯 Async document parse (Upstage API) for supported formats
-                if file.content_type in [
-                    "image/jpeg", "image/png", "image/bmp", "application/pdf",
-                    "image/tiff", "image/heic",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # .pptx
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
-                    "application/x-hwp",  # .hwp
-                    "application/vnd.hancom.hwp",  # alternative hwp
-                    "application/vnd.hancom.hwpx",  # .hwpx
-                ]:
+                upstage_supported_content_types = (
+                    getattr(request.app.state.config, 'UPSTAGE_SUPPORTED_CONTENT_TYPES', None)
+                    or [
+                        "image/jpeg", "image/png", "image/bmp", "application/pdf",
+                        "image/tiff", "image/heic",
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # .pptx
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+                        "application/x-hwp",  # .hwp
+                        "application/vnd.hancom.hwp",  # alternative hwp
+                        "application/vnd.hancom.hwpx",  # .hwpx
+                    ]
+                )
+
+                stt_supported_content_types = (
+                    getattr(request.app.state.config, 'STT_SUPPORTED_CONTENT_TYPES', None)
+                    or [
+                        "audio/*",
+                        "video/webm",
+                        "audio/mpeg",
+                        "audio/wav",
+                        "audio/ogg",
+                        "audio/x-m4a",
+                    ]
+                )
+
+                if any(
+                    fnmatch(file.content_type, content_type)
+                    for content_type in upstage_supported_content_types
+                ):
                     file_path_on_disk = Storage.get_file(file_path)
                     request_id = generate_upstage_document_parsing_async(
                         model="document-parse",
@@ -184,12 +204,10 @@ def upload_file(
                         key=request.app.state.config.RAG_UPSTAGE_API_KEY
                     )
                     meta_data["request_id"] = request_id
-                elif file.content_type in [
-                    "audio/mpeg",
-                    "audio/wav",
-                    "audio/ogg",
-                    "audio/x-m4a",
-                ]:
+                elif any(
+                    fnmatch(file.content_type, content_type)
+                    for content_type in stt_supported_content_types
+                ):
                     file_path = Storage.get_file(file_path)
                     result = transcribe(request, file_path)
 

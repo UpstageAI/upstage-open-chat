@@ -60,5 +60,8 @@ export default defineConfig({
 				changeOrigin: true
 			}
 		}
+	},
+	esbuild: {
+		pure: ['console.log', 'console.debug']
 	}
 });
