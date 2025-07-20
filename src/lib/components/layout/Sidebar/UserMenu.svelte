@@ -9,7 +9,7 @@
 	import { getUsage } from '$lib/apis';
 	import { userSignOut } from '$lib/apis/auths';
 
-	import { showSettings, mobile, showSidebar, user } from '$lib/stores';
+	import { showSettings, mobile, showSidebar, user, activeUserIds } from '$lib/stores';
 
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
@@ -206,37 +206,36 @@
 			{#if role === 'admin' && $activeUserIds?.length > 0}
 				<hr class=" border-gray-100 dark:border-gray-800 my-1 p-0" />
 
-					<Tooltip
-						content={usage?.model_ids && usage?.model_ids.length > 0
-							? `${$i18n.t('Running')}: ${usage.model_ids.join(', ')} ✨`
-							: ''}
+				<Tooltip
+					content={usage?.model_ids && usage?.model_ids.length > 0
+						? `${$i18n.t('Running')}: ${usage.model_ids.join(', ')} ✨`
+						: ''}
+				>
+					<div
+						class="flex rounded-md py-1 px-3 text-xs gap-2.5 items-center"
+						on:mouseenter={() => {
+							getUsageInfo();
+						}}
 					>
-						<div
-							class="flex rounded-md py-1 px-3 text-xs gap-2.5 items-center"
-							on:mouseenter={() => {
-								getUsageInfo();
-							}}
-						>
-							<div class=" flex items-center">
-								<span class="relative flex size-2">
-									<span
-										class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-									/>
-									<span class="relative inline-flex rounded-full size-2 bg-green-500" />
-								</span>
-							</div>
-
-							<div class=" ">
-								<span class="">
-									{$i18n.t('Active Users')}:
-								</span>
-								<span class=" font-semibold">
-									{usage?.user_ids?.length}
-								</span>
-							</div>
+						<div class=" flex items-center">
+							<span class="relative flex size-2">
+								<span
+									class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+								/>
+								<span class="relative inline-flex rounded-full size-2 bg-green-500" />
+							</span>
 						</div>
-					</Tooltip>
-				{/if}
+
+						<div class=" ">
+							<span class="">
+								{$i18n.t('Active Users')}:
+							</span>
+							<span class=" font-semibold">
+								{usage?.user_ids?.length}
+							</span>
+						</div>
+					</div>
+				</Tooltip>
 			{/if}
 
 			<!-- <DropdownMenu.Item class="flex items-center py-1.5 px-3 text-sm ">
