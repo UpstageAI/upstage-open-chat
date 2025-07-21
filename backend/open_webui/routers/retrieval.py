@@ -1989,6 +1989,8 @@ async def process_web_search(
                 for result in search_results
                 if hasattr(result, "snippet")
             ]
+            for search_result in search_results:
+                print(search_result[:50])
         else:
             loader = get_web_loader(
                 urls,
