@@ -119,6 +119,7 @@
 												placeholder={$i18n.t('Enter Searxng Query URL')}
 												bind:value={webConfig.SEARXNG_QUERY_URL}
 												autocomplete="off"
+												required
 											/>
 										</div>
 									</div>
@@ -226,7 +227,6 @@
 										bind:value={webConfig.KAGI_SEARCH_API_KEY}
 									/>
 								</div>
-								.
 							</div>
 						{:else if webConfig.WEB_SEARCH_ENGINE === 'mojeek'}
 							<div class="mb-2.5 flex w-full flex-col">

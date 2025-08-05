@@ -1,18 +1,18 @@
-# Upstage OpenUp 👋
+# Open WebUI 👋
 
-![GitHub stars](https://img.shields.io/github/stars/UpstageAI/upstage-open-chat?style=social)
-![GitHub forks](https://img.shields.io/github/forks/UpstageAI/upstage-open-chat?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/UpstageAI/upstage-open-chat?style=social)
-![GitHub repo size](https://img.shields.io/github/repo-size/UpstageAI/upstage-open-chat)
-![GitHub language count](https://img.shields.io/github/languages/count/UpstageAI/upstage-open-chat)
-![GitHub top language](https://img.shields.io/github/languages/top/UpstageAI/upstage-open-chat)
-![GitHub last commit](https://img.shields.io/github/last-commit/UpstageAI/upstage-open-chat?color=red)
-
-**Forked from [open-webui/open-webui](https://github.com/open-webui/open-webui)** - User-friendly AI Interface, powered by Upstage's SolarLLM and Document Processing (DP)
+![GitHub stars](https://img.shields.io/github/stars/open-webui/open-webui?style=social)
+![GitHub forks](https://img.shields.io/github/forks/open-webui/open-webui?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/open-webui/open-webui?style=social)
+![GitHub repo size](https://img.shields.io/github/repo-size/open-webui/open-webui)
+![GitHub language count](https://img.shields.io/github/languages/count/open-webui/open-webui)
+![GitHub top language](https://img.shields.io/github/languages/top/open-webui/open-webui)
+![GitHub last commit](https://img.shields.io/github/last-commit/open-webui/open-webui?color=red)
 [![Discord](https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white)](https://discord.gg/5rJgQTnV4s)
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/tjbck)
 
 **Open WebUI is an [extensible](https://docs.openwebui.com/features/plugin/), feature-rich, and user-friendly self-hosted AI platform designed to operate entirely offline.** It supports various LLM runners like **Ollama** and **OpenAI-compatible APIs**, with **built-in inference engine** for RAG, making it a **powerful AI deployment solution**.
+
+Passionate about open-source AI? [Join our team →](https://careers.openwebui.com/)
 
 ![Open WebUI Demo](./demo.gif)
 
@@ -76,16 +76,6 @@ Want to learn more about Open WebUI's features? Check out our [Open WebUI docume
     </td>
     <td>
       <a href="https://n8n.io/">n8n</a> • Does your interface have a backend yet?<br>Try <a href="https://n8n.io/">n8n</a>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <a href="https://warp.dev/open-webui" target="_blank">
-        <img src="https://docs.openwebui.com/sponsors/logos/warp.png" alt="Warp" style="width: 8rem; height: 8rem; border-radius: .75rem;" />
-      </a>
-    </td>
-    <td>
-      <a href="https://warp.dev/open-webui">Warp</a> • The intelligent terminal for developers
     </td>
   </tr>
   <tr>

@@ -209,7 +209,7 @@
 		</button>
 
 		<button
-			id="documents"
+			id="toolmanager"
 			class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
 			'toolmanager'
 				? ''
@@ -236,6 +236,7 @@
 		</button>
 
 		<button
+			id="documents"
 			class="px-0.5 py-1 min-w-fit rounded-lg flex-1 md:flex-none flex text-left transition {selectedTab ===
 			'documents'
 				? ''

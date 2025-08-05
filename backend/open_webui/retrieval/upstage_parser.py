@@ -62,16 +62,32 @@ def generate_upstage_document_parsing(
         r.raise_for_status()
         data = r.json()
         # print(data)
-        if "content" in data and "html" in data["content"]:
-            return [
-                Document(
-                    page_content=data["content"]["html"], metadata={}
-                )
-                # for doc in docs
-            ]
-            return [data["content"]["html"]]
+        
+        # content 필드 확인 및 여러 포맷 지원
+        if "content" in data:
+            content = data["content"]
+            
+            # 여러 포맷 확인 (markdown 우선, html 후순위)
+            if isinstance(content, dict):
+                if "markdown" in content and content["markdown"]:
+                    return [
+                        Document(
+                            page_content=content["markdown"], metadata={}
+                        )
+                    ]
+                elif "html" in content and content["html"]:
+                    return [
+                        Document(
+                            page_content=content["html"], metadata={}
+                        )
+                    ]
+        
+        # 데이터가 있지만 예상 구조가 아닐 때
+        if data:
+            log.warning(f"Unexpected Upstage API response structure. Data keys: {list(data.keys())}")
+            raise Exception(f"Unexpected API response structure. Expected 'content' field with 'markdown' or 'html'")
         else:
-            raise "Something went wrong :/"
+            raise Exception("Empty response from Upstage API")
     except Exception as e:
         log.exception(f"Error generating upstage document parsing: {e}")
         return None
@@ -120,7 +136,7 @@ def generate_upstage_document_parsing_async(
         if "request_id" in data:
             return data["request_id"]
         else:
-            raise "Something went wrong :/"
+            raise Exception("Failed to get request_id from Upstage API response")
     except Exception as e:
         log.exception(f"Error generating upstage document parsing async: {e}")
         return None
@@ -261,7 +277,7 @@ def generate_upstage_batch_embeddings(
         if "data" in data:
             return [elem["embedding"] for elem in data["data"]]
         else:
-            raise "Something went wrong :/"
+            raise Exception("Failed to get embedding data from Upstage API response")
     except Exception as e:
         log.exception(f"Error generating openai batch embeddings: {e}")
         return None
