@@ -36,7 +36,8 @@
 		chatTitle,
 		showArtifacts,
 		tools,
-		toolServers
+		toolServers,
+		selectedFolder
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -55,10 +56,7 @@
 
 	import { generateChatCompletion } from '$lib/apis/ollama';
 	import {
-		addTagById,
 		createNewChat,
-		deleteTagById,
-		deleteTagsById,
 		getAllTags,
 		getChatById,
 		getChatList,
@@ -95,9 +93,11 @@
 
 	let loading: boolean = false;
 
-	const eventTarget: EventTarget = new EventTarget();
-	let controlPane: any;
-	let controlPaneComponent: any;
+	const eventTarget = new EventTarget();
+	let controlPane;
+	let controlPaneComponent;
+
+	let messageInput;
 
 	let autoScroll: boolean = true;
 	let processing: string = '';
@@ -123,13 +123,14 @@
 	let selectedModelIds: string[] = [];
 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
-	let selectedToolIds: string[] = [];
-	let selectedFilterIds: string[] = [];
-	let imageGenerationEnabled: boolean = false;
-	let webSearchEnabled: boolean = false;
-	let codeInterpreterEnabled: boolean = false;
-	let reasoningEnabled: boolean = false;
-	let toolUseEnabled: boolean = false;
+	let selectedToolIds = [];
+	let selectedFilterIds = [];
+	let imageGenerationEnabled = false;
+	let webSearchEnabled = false;
+	let codeInterpreterEnabled = false;
+	let reasoningEnabled = false;
+	let toolUseEnabled = false;
+	let showCommands = false;
 
 	let chat: any = null;
 	let tags: any[] = [];
@@ -149,24 +150,38 @@
 	let params: Record<string, any> = {};
 
 	$: if (chatIdProp) {
-		(async () => {
-			loading = true;
+		navigateHandler();
+	}
 
-			prompt = '';
-			files = [];
-			selectedToolIds = [];
-			selectedFilterIds = [];
-			webSearchEnabled = false;
-			imageGenerationEnabled = false;
+	const navigateHandler = async () => {
+		loading = true;
 
-			if (localStorage.getItem(`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`)) {
+		prompt = '';
+		messageInput?.setText('');
+
+		files = [];
+		selectedToolIds = [];
+		selectedFilterIds = [];
+		webSearchEnabled = false;
+		imageGenerationEnabled = false;
+
+		const storageChatInput = sessionStorage.getItem(
+			`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`
+		);
+
+		if (chatIdProp && (await loadChat())) {
+			await tick();
+			loading = false;
+			window.setTimeout(() => scrollToBottom(), 0);
+
+			await tick();
+
+			if (storageChatInput) {
 				try {
-					const input = JSON.parse(
-						localStorage.getItem(`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`)
-					);
+					const input = JSON.parse(storageChatInput);
 
 					if (!$temporaryChatEnabled) {
-						prompt = input.prompt;
+						messageInput?.setText(input.prompt);
 						files = input.files;
 						selectedToolIds = input.selectedToolIds;
 						selectedFilterIds = input.selectedFilterIds;
@@ -179,17 +194,21 @@
 				} catch (e) {}
 			}
 
-			if (chatIdProp && (await loadChat())) {
-				await tick();
-				loading = false;
-				window.setTimeout(() => scrollToBottom(), 0);
-				const chatInput = document.getElementById('chat-input');
-				chatInput?.focus();
-			} else {
-				await goto('/');
-			}
-		})();
-	}
+			const chatInput = document.getElementById('chat-input');
+			chatInput?.focus();
+		} else {
+			await goto('/');
+		}
+	};
+
+	const onSelect = async (e) => {
+		const { type, data } = e;
+
+		if (type === 'prompt') {
+			// Handle prompt selection
+			messageInput?.setText(data);
+		}
+	};
 
 	$: if (selectedModels && chatIdProp !== '') {
 		saveSessionSelectedModels();
@@ -454,7 +473,7 @@
 			const inputElement = document.getElementById('chat-input');
 
 			if (inputElement) {
-				prompt = event.data.text;
+				messageInput?.setText(event.data.text);
 				inputElement.focus();
 			}
 		}
@@ -492,8 +511,19 @@
 			}
 		});
 
-		if (localStorage.getItem(`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`)) {
+		const storageChatInput = sessionStorage.getItem(
+			`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`
+		);
+
+		if (!chatIdProp) {
+			loading = false;
+			await tick();
+		}
+
+		if (storageChatInput) {
 			prompt = '';
+			messageInput?.setText('');
+
 			files = [];
 			selectedToolIds = [];
 			selectedFilterIds = [];
@@ -504,12 +534,10 @@
 			toolUseEnabled = false;
 
 			try {
-				const input = JSON.parse(
-					localStorage.getItem(`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`)
-				);
+				const input = JSON.parse(storageChatInput);
 
 				if (!$temporaryChatEnabled) {
-					prompt = input.prompt;
+					messageInput?.setText(input.prompt);
 					files = input.files;
 					selectedToolIds = input.selectedToolIds;
 					selectedFilterIds = input.selectedFilterIds;
@@ -520,11 +548,6 @@
 					toolUseEnabled = input.toolUseEnabled;
 				}
 			} catch (e) {}
-		}
-
-		if (!chatIdProp) {
-			loading = false;
-			await tick();
 		}
 
 		showControls.subscribe(async (value) => {
@@ -758,6 +781,10 @@
 	//////////////////////////
 
 	const initNewChat = async () => {
+		if ($user?.role !== 'admin' && $user?.permissions?.chat?.temporary_enforced) {
+			await temporaryChatEnabled.set(true);
+		}
+
 		const availableModels = $models
 			.filter((m) => !(m?.info?.meta?.hidden ?? false))
 			.map((m) => m.id);
@@ -882,11 +909,14 @@
 		}
 
 		if ($page.url.searchParams.get('q')) {
-			prompt = $page.url.searchParams.get('q') ?? '';
+			const q = $page.url.searchParams.get('q') ?? '';
+			messageInput?.setText(q);
 
-			if (prompt) {
-				await tick();
-				submitPrompt(prompt);
+			if (q) {
+				if (($page.url.searchParams.get('submit') ?? 'true') === 'true') {
+					await tick();
+					submitPrompt(q);
+				}
 			}
 		}
 
@@ -1118,7 +1148,7 @@
 	};
 
 	const createMessagePair = async (userPrompt) => {
-		prompt = '';
+		messageInput?.setText('');
 		if (selectedModels.length === 0) {
 			toast.error($i18n.t('Model not selected'));
 		} else {
@@ -1247,7 +1277,7 @@
 			await handleOpenAIError(error, message);
 		}
 
-		if (sources) {
+		if (sources && !message?.sources) {
 			message.sources = sources;
 		}
 
@@ -1371,6 +1401,12 @@
 			);
 
 			history.messages[message.id] = message;
+
+			await tick();
+			if (autoScroll) {
+				scrollToBottom();
+			}
+
 			await chatCompletedHandler(
 				chatId,
 				message.model,
@@ -1380,6 +1416,8 @@
 		}
 
 		console.log(data);
+		await tick();
+
 		if (autoScroll) {
 			scrollToBottom();
 		}
@@ -1439,7 +1477,7 @@
 			return;
 		}
 
-		prompt = '';
+		messageInput?.setText('');
 
 		// Reset chat input textarea
 		if (!($settings?.richTextInput ?? true)) {
@@ -1460,7 +1498,7 @@
 		);
 
 		files = [];
-		prompt = '';
+		messageInput?.setText('');
 
 		// Create user message
 		let userMessageId = uuidv4();
@@ -1617,9 +1655,8 @@
 		let files = JSON.parse(JSON.stringify(chatFiles));
 		files.push(
 			...(userMessage?.files ?? []).filter((item) =>
-				['doc', 'file', 'collection'].includes(item.type)
-			),
-			...(responseMessage?.files ?? []).filter((item) => ['web_search_results'].includes(item.type))
+				['doc', 'text', 'file', 'note', 'collection'].includes(item.type)
+			)
 		);
 		// Remove duplicates
 		files = files.filter(
@@ -2005,25 +2042,33 @@
 		let _chatId = $chatId;
 
 		if (!$temporaryChatEnabled) {
-			chat = await createNewChat(localStorage.token, {
-				id: _chatId,
-				title: $i18n.t('New Chat'),
-				models: selectedModels,
-				system: $settings.system ?? undefined,
-				params: params,
-				history: history,
-				messages: createMessagesList(history, history.currentId),
-				tags: [],
-				timestamp: Date.now()
-			});
+			chat = await createNewChat(
+				localStorage.token,
+				{
+					id: _chatId,
+					title: $i18n.t('New Chat'),
+					models: selectedModels,
+					system: $settings.system ?? undefined,
+					params: params,
+					history: history,
+					messages: createMessagesList(history, history.currentId),
+					tags: [],
+					timestamp: Date.now()
+				},
+				$selectedFolder?.id
+			);
 
 			_chatId = chat.id;
 			await chatId.set(_chatId);
 
+			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+
+			await tick();
+
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			currentChatPage.set(1);
 
-			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+			selectedFolder.set(null);
 		} else {
 			_chatId = 'local';
 			await chatId.set('local');
@@ -2087,12 +2132,13 @@
 >
 	{#if !loading}
 		<div in:fade={{ duration: 50 }} class="w-full h-full flex flex-col">
-			{#if $settings?.backgroundImageUrl ?? null}
+			{#if $settings?.backgroundImageUrl ?? $config?.license_metadata?.background_image_url ?? null}
 				<div
 					class="absolute {$showSidebar
 						? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
 						: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
-					style="background-image: url({$settings.backgroundImageUrl})  "
+					style="background-image: url({$settings?.backgroundImageUrl ??
+						$config?.license_metadata?.background_image_url})  "
 				/>
 
 				<div
@@ -2120,10 +2166,11 @@
 						bind:selectedModels
 						shareEnabled={!!history.currentId}
 						{initNewChat}
+						showBanners={!showCommands}
 					/>
 
-					<div class="flex flex-col flex-auto z-10 w-full @container">
-						{#if $settings?.landingPageMode === 'chat' || createMessagesList(history, history.currentId).length > 0}
+					<div class="flex flex-col flex-auto z-10 w-full @container overflow-auto">
+						{#if ($settings?.landingPageMode === 'chat' && !$selectedFolder) || createMessagesList(history, history.currentId).length > 0}
 							<div
 								class=" pb-2.5 flex flex-col justify-between w-full flex-auto overflow-auto h-0 max-w-full z-10 scrollbar-hidden"
 								id="messages-container"
@@ -2140,6 +2187,9 @@
 										bind:history
 										bind:autoScroll
 										bind:prompt
+										setInputText={(text) => {
+											messageInput?.setText(text);
+										}}
 										{selectedModels}
 										{atSelectedModel}
 										{sendPrompt}
@@ -2151,12 +2201,14 @@
 										{chatActionHandler}
 										{addMessages}
 										bottomPadding={files.length > 0}
+										{onSelect}
 									/>
 								</div>
 							</div>
 
 							<div class=" pb-2">
 								<MessageInput
+									bind:this={messageInput}
 									{history}
 									{taskIds}
 									{selectedModels}
@@ -2171,19 +2223,22 @@
 									bind:reasoningEnabled
 									bind:toolUseEnabled
 									bind:atSelectedModel
+									bind:showCommands
 									toolServers={$toolServers}
-									transparentBackground={$settings?.backgroundImageUrl ?? false}
+									transparentBackground={$settings?.backgroundImageUrl ??
+										$config?.license_metadata?.background_image_url ??
+										false}
 									{stopResponse}
 									{createMessagePair}
 									onChange={(input) => {
 										if (!$temporaryChatEnabled) {
 											if (input.prompt !== null) {
-												localStorage.setItem(
+												sessionStorage.setItem(
 													`chat-input${$chatId ? `-${$chatId}` : ''}`,
 													JSON.stringify(input)
 												);
 											} else {
-												localStorage.removeItem(`chat-input${$chatId ? `-${$chatId}` : ''}`);
+												sessionStorage.removeItem(`chat-input${$chatId ? `-${$chatId}` : ''}`);
 											}
 										}
 									}}
@@ -2217,10 +2272,11 @@
 								</div>
 							</div>
 						{:else}
-							<div class="overflow-auto w-full h-full flex items-center">
+							<div class="flex items-center h-full">
 								<Placeholder
 									{history}
 									{selectedModels}
+									bind:messageInput
 									bind:files
 									bind:prompt
 									bind:autoScroll
@@ -2232,10 +2288,14 @@
 									bind:reasoningEnabled
 									bind:toolUseEnabled
 									bind:atSelectedModel
-									transparentBackground={$settings?.backgroundImageUrl ?? false}
+									bind:showCommands
+									transparentBackground={$settings?.backgroundImageUrl ??
+										$config?.license_metadata?.background_image_url ??
+										false}
 									toolServers={$toolServers}
 									{stopResponse}
 									{createMessagePair}
+									{onSelect}
 									on:upload={async (e) => {
 										const { type, data } = e.detail;
 
@@ -2289,7 +2349,7 @@
 	{:else if loading}
 		<div class=" flex items-center justify-center h-full w-full">
 			<div class="m-auto">
-				<Spinner />
+				<Spinner className="size-5" />
 			</div>
 		</div>
 	{/if}

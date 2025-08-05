@@ -21,6 +21,7 @@ from fastapi import (
 from fastapi.responses import FileResponse, StreamingResponse
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
+from open_webui.retrieval.vector.factory import VECTOR_DB_CLIENT
 
 from open_webui.models.users import Users
 from open_webui.models.files import (
@@ -253,7 +254,51 @@ def upload_file(
                 }
             ),
         )
-    
+        if process:
+            try:
+                if file.content_type:
+                    stt_supported_content_types = getattr(
+                        request.app.state.config, "STT_SUPPORTED_CONTENT_TYPES", []
+                    )
+
+                    if any(
+                        fnmatch(file.content_type, content_type)
+                        for content_type in (
+                            stt_supported_content_types
+                            if stt_supported_content_types
+                            and any(t.strip() for t in stt_supported_content_types)
+                            else ["audio/*", "video/webm"]
+                        )
+                    ):
+                        file_path = Storage.get_file(file_path)
+                        result = transcribe(request, file_path, file_metadata)
+
+                        process_file(
+                            request,
+                            ProcessFileForm(file_id=id, content=result.get("text", "")),
+                            user=user,
+                        )
+                    elif (not file.content_type.startswith(("image/", "video/"))) or (
+                        request.app.state.config.CONTENT_EXTRACTION_ENGINE == "external"
+                    ):
+                        process_file(request, ProcessFileForm(file_id=id), user=user)
+                else:
+                    log.info(
+                        f"File type {file.content_type} is not provided, but trying to process anyway"
+                    )
+                    process_file(request, ProcessFileForm(file_id=id), user=user)
+
+                file_item = Files.get_file_by_id(id=id)
+            except Exception as e:
+                log.exception(e)
+                log.error(f"Error processing file: {file_item.id}")
+                file_item = FileModelResponse(
+                    **{
+                        **file_item.model_dump(),
+                        "error": str(e.detail) if hasattr(e, "detail") else str(e),
+                    }
+                )
+
         if file_item:
             return file_item
         else:
@@ -343,6 +388,7 @@ async def delete_all_files(user=Depends(get_admin_user)):
     if result:
         try:
             Storage.delete_all_files()
+            VECTOR_DB_CLIENT.reset()
         except Exception as e:
             log.exception(e)
             log.error("Error deleting files")
@@ -660,12 +706,12 @@ async def delete_file_by_id(id: str, user=Depends(get_verified_user)):
         or user.role == "admin"
         or has_access_to_file(id, "write", user)
     ):
-        # We should add Chroma cleanup here
 
         result = Files.delete_file_by_id(id)
         if result:
             try:
                 Storage.delete_file(file.path)
+                VECTOR_DB_CLIENT.delete(collection_name=f"file-{id}")
             except Exception as e:
                 log.exception(e)
                 log.error("Error deleting files")
